@@ -239,8 +239,8 @@ def get_gen_loss(real_A, real_B, gen_AB, gen_BA, disc_A, disc_B, adv_criterion, 
     fake_A = gen_BA(real_B)
     fake_B = gen_AB(real_A)
     # Adversarial Loss -- get_gen_adversarial_loss(real_X, disc_Y, gen_XY, adv_criterion)
-    adv_loss_BA = SPL_Loss(fake_B, real_A)
-    adv_loss_AB = SPL_Loss(fake_A, real_B)
+    adv_loss_BA  =  SPL_Loss(real_A, fake_B)
+    adv_loss_AB  =  SPL_Loss(real_B, fake_A)
     gen_adversarial_loss = adv_loss_BA + adv_loss_AB
 
     # Identity Loss -- get_identity_loss(real_X, gen_YX, identity_criterion)
