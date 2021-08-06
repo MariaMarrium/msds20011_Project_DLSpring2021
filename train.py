@@ -11,7 +11,6 @@ from torch.utils.data import Dataset
 from torchvision import transforms
 from torch.utils.data import DataLoader
 from cycle_gan import Discriminator, Generator, get_gen_loss, get_disc_loss
-from utils import visualizer
 
 
 class ImageDataset(object):
@@ -153,7 +152,7 @@ if __name__ == '__main__':
     parser.add_argument('--model', type=str,
                         default='joy2sadness', help='model you want to train')
     parser.add_argument('--dataroot', type=str,
-                        default='dataset/Emotion6/images', help='dataset directory path')
+                        default='datasets/Emotion6/images', help='dataset directory path')
     parser.add_argument('--batch_size', type=int,
                         default=1, help='batch size')
     parser.add_argument('--epochs', type=int,
