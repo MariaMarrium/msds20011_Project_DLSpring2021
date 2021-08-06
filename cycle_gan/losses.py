@@ -3,6 +3,10 @@ import torch.nn.functional as F
 
 
 class GPLoss(torch.nn.Module):
+    """
+    Adopted from: https://github.com/ssarfraz/SPL
+    """
+
     def __init__(self):
         super(GPLoss, self).__init__()
         self.trace = SPLoss()
@@ -32,6 +36,10 @@ class GPLoss(torch.nn.Module):
 
 
 class CPLoss(torch.nn.Module):
+    """
+    Adopted from: https://github.com/ssarfraz/SPL
+    """
+
     def __init__(self, rgb=True, yuv=True, yuvgrad=True):
         super(CPLoss, self).__init__()
         self.rgb = rgb
@@ -80,7 +88,7 @@ class CPLoss(torch.nn.Module):
 
 class SPL_ComputeWithTrace(torch.nn.Module):
     """
-    Slow implementation of the trace loss using the same formula as stated in the paper.
+    Adopted from: https://github.com/ssarfraz/SPL
     """
 
     def __init__(self, weight=[1., 1., 1.]):
@@ -102,6 +110,10 @@ class SPL_ComputeWithTrace(torch.nn.Module):
 
 
 class SPLoss(torch.nn.Module):
+    """
+    Adopted from: https://github.com/ssarfraz/SPL
+    """
+
     def __init__(self):
         super(SPLoss, self).__init__()
 
@@ -115,6 +127,8 @@ class SPLoss(torch.nn.Module):
 
 def get_gen_adversarial_loss(real_X, disc_Y, gen_XY, adv_criterion):
     '''
+    Adopted from: https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix
+
     Return the adversarial loss of the generator given inputs
     (and the generated images for testing purposes).
     Parameters:
@@ -137,6 +151,8 @@ def get_gen_adversarial_loss(real_X, disc_Y, gen_XY, adv_criterion):
 
 def get_identity_loss(real_X, gen_YX, identity_criterion):
     '''
+    Adopted from: https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix
+
     Return the identity loss of the generator given inputs
     (and the generated images for testing purposes).
     Parameters:
@@ -155,6 +171,8 @@ def get_identity_loss(real_X, gen_YX, identity_criterion):
 
 def get_cycle_consistency_loss(real_X, fake_Y, gen_YX, cycle_criterion):
     '''
+    Adopted from: https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix
+
     Return the cycle consistency loss of the generator given inputs
     (and the generated images for testing purposes).
     Parameters:
@@ -191,6 +209,8 @@ def SPL_Loss(target, generated):
 
 def get_gen_loss(real_A, real_B, gen_AB, gen_BA, disc_A, disc_B, adv_criterion, identity_criterion, cycle_criterion, lambda_identity=0.1, lambda_cycle=10):
     '''
+    Adopted from: https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix
+
     Return the loss of the generator given inputs.
     Parameters:
       real_A: the real images from pile A
@@ -245,6 +265,8 @@ def get_gen_loss(real_A, real_B, gen_AB, gen_BA, disc_A, disc_B, adv_criterion, 
 
 def get_disc_loss(real_X, fake_X, disc_X, adv_criterion):
     '''
+    Adopted from: https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix
+
     Return the loss of the discriminator given inputs.
     Parameters:
       real_X: the real images from pile X

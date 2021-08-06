@@ -4,13 +4,14 @@ import glob
 import torch
 import argparse
 from PIL import Image
-from torchvision.utils import make_grid
+from torchvision.utils import make_grid, save_image
 from tqdm.auto import tqdm
 import matplotlib.pyplot as plt
 from torch.utils.data import Dataset
 from torchvision import transforms
 from torch.utils.data import DataLoader
 from cycle_gan import Discriminator, Generator, get_gen_loss, get_disc_loss
+from utils import visualizer
 
 
 class ImageDataset(object):
@@ -46,6 +47,17 @@ class ImageDataset(object):
     def __len__(self):
         return min(len(self.domain_A), len(self.domain_B))
 
+def save_tensor_images(image_tensor, num_images=25, size=(1, 28, 28), fname='1.jpg'):
+  '''
+  Function for visualizing images: Given a tensor of images, number of images, and
+  size per image, plots and prints the images in an uniform grid.
+  '''
+  image_tensor = (image_tensor + 1) / 2
+  image_shifted = image_tensor
+  image_unflat = image_shifted.detach().cpu().view(-1, *size)
+  #image_grid = make_grid(image_unflat[:num_images], nrow=5)
+  save_image(image_unflat, fname)
+
 
 def weights_init(m):
     if isinstance(m, torch.nn.Conv2d) or isinstance(m, torch.nn.ConvTranspose2d):
@@ -54,21 +66,7 @@ def weights_init(m):
         torch.nn.init.normal_(m.weight, 0.0, 0.02)
         torch.nn.init.constant_(m.bias, 0)
 
-
-def show_tensor_images(image_tensor, num_images=25, size=(1, 28, 28)):
-    '''
-    Function for visualizing images: Given a tensor of images, number of images, and
-    size per image, plots and prints the images in an uniform grid.
-    '''
-    image_tensor = (image_tensor + 1) / 2
-    image_shifted = image_tensor
-    image_unflat = image_shifted.detach().cpu().view(-1, *size)
-    image_grid = make_grid(image_unflat[:num_images], nrow=5)
-    plt.imshow(image_grid.permute(1, 2, 0).squeeze())
-    plt.show()
-
-
-def train(epochs, target_shape=128, display_step=200, save_model=True):
+def train(epochs, adv_criterion, recon_criterion, target_shape=128, display_step=200, save_model=True):
     adv_criterion = torch.nn.MSELoss()
     recon_criterion = torch.nn.L1Loss()
     mean_generator_loss = 0
@@ -79,8 +77,6 @@ def train(epochs, target_shape=128, display_step=200, save_model=True):
     disc_loss = []
 
     for epoch in range(epochs):
-        # Dataloader returns the batches
-        # for image, _ in tqdm(dataloader):
         for real_A, real_B in tqdm(dataloader):
             # image_width = image.shape[3]
             real_A = torch.nn.functional.interpolate(real_A, size=target_shape)
@@ -122,11 +118,18 @@ def train(epochs, target_shape=128, display_step=200, save_model=True):
             if cur_step % display_step == 0:
                 print(
                     f"Epoch {epoch}: Step {cur_step}: Generator (U-Net) loss: {mean_generator_loss}, Discriminator loss: {mean_discriminator_loss}")
-                show_tensor_images(torch.cat([real_A, real_B]), size=(
-                    dim_A, target_shape, target_shape))
-                show_tensor_images(torch.cat([fake_B, fake_A]), size=(
-                    dim_B, target_shape, target_shape))
-                mean_generator_loss = 0
+                save_tensor_images(real_A, size=(
+                    args.dim_A, target_shape, target_shape), fname=f'real_A{epoch}_{cur_step}.jpg')
+                save_tensor_images(real_B, size=(
+                    args.dim_A, target_shape, target_shape), fname=f'real_B{epoch}_{cur_step}.jpg')
+                save_tensor_images(fake_A, size=(
+                    args.dim_A, target_shape, target_shape), fname=f'fake_A{epoch}_{cur_step}.jpg')
+                save_tensor_images(fake_B, size=(
+                    args.dim_A, target_shape, target_shape), fname=f'fake_B{epoch}_{cur_step}.jpg')
+                
+                # show_tensor_images(torch.cat([fake_B, fake_A]), size=(
+                #     args.dim_B, target_shape, target_shape))
+                # mean_generator_loss = 0
                 mean_discriminator_loss = 0
                 # You can change save_model to True if you'd like to save the model
                 if save_model:
@@ -138,7 +141,7 @@ def train(epochs, target_shape=128, display_step=200, save_model=True):
                         'disc_A_opt': disc_A_opt.state_dict(),
                         'disc_B': disc_B.state_dict(),
                         'disc_B_opt': disc_B_opt.state_dict()
-                    }, f"/content/drive/MyDrive/Datasets/models4/cycleGAN_{cur_step}.pth")
+                    }, f"a{cur_step}.pth")
             cur_step += 1
         generator_loss.append(mean_generator_loss)
         disc_loss.append(mean_discriminator_loss)
@@ -152,45 +155,58 @@ if __name__ == '__main__':
     parser.add_argument('--dataroot', type=str,
                         default='dataset/Emotion6/images', help='dataset directory path')
     parser.add_argument('--batch_size', type=int,
-                        default=4, help='batch size')
-
+                        default=1, help='batch size')
     parser.add_argument('--epochs', type=int,
                         default=20, help='tarining epochs')
     parser.add_argument('--lr', type=int,
                         default=0.001, help='tarining epochs')
     parser.add_argument('--model_path', type=str,
                         default='checkpoints', help='tarining epochs')
-
+    parser.add_argument('--target_size', type=int,
+                        default=128, help='image resize')
+    parser.add_argument('--load_size', type=int,
+                        default=128, help='image load size')
+    parser.add_argument('--dim_A', type=int,
+                        default=3, help='domain A image dimesions')
+    parser.add_argument('--dim_B', type=int,
+                        default=3, help='domain B image dimesions')
+    parser.add_argument('--betas', type=tuple,
+                        default=(0.5, 0.999), help='running average co-efficient')
+    parser.add_argument('--loss', type=str,
+                        default='mse', help='loss function')
+    
     args = parser.parse_args()
     emotions = re.findall('[A-Za-z]+', args.model)
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     transform = transforms.Compose([
-        transforms.Resize((128, 128)),
+        transforms.Resize((args.target_size, args.target_size)),
         transforms.ToTensor()
-    ])  # transforms.RandomCrop(128),
+    ])  
+
     print(args.dataroot)
     dataset = ImageDataset(
         args.dataroot, transform=transform, A=emotions[0], B=emotions[1])
 
     dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True)
-    dim_A = 3
-    dim_B = 3
-    gen_AB = Generator(dim_A, dim_B).to(device)
-    gen_BA = Generator(dim_B, dim_A).to(device)
+    gen_AB = Generator(args.dim_A, args.dim_B).to(device)
+    gen_BA = Generator(args.dim_B, args.dim_A).to(device)
     gen_opt = torch.optim.Adam(
-        list(gen_AB.parameters()) + list(gen_BA.parameters()), lr=args.lr, betas=(0.5, 0.999))
-    disc_A = Discriminator(dim_A).to(device)
+        list(gen_AB.parameters()) + list(gen_BA.parameters()), lr=args.lr, betas=args.betas)
+    disc_A = Discriminator(args.dim_A).to(device)
     disc_A_opt = torch.optim.Adam(
-        disc_A.parameters(), lr=args.lr, betas=(0.5, 0.999))
-    disc_B = Discriminator(dim_B).to(device)
+        disc_A.parameters(), lr=args.lr, betas=args.betas)
+    disc_B = Discriminator(args.dim_B).to(device)
     disc_B_opt = torch.optim.Adam(
-        disc_B.parameters(), lr=args.lr, betas=(0.5, 0.999))
+        disc_B.parameters(), lr=args.lr, betas=args.betas)
 
     gen_AB = gen_AB.apply(weights_init)
     gen_BA = gen_BA.apply(weights_init)
     disc_A = disc_A.apply(weights_init)
     disc_B = disc_B.apply(weights_init)
 
-generator_loss, disc_loss = train(args.epochs)
+    adv_criterion = torch.nn.MSELoss()
+    recon_criterion = torch.nn.L1Loss()
+    
+    generator_loss, disc_loss = train(args.epochs, adv_criterion, recon_criterion)
