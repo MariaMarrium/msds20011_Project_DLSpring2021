@@ -118,13 +118,13 @@ def train(epochs, adv_criterion, recon_criterion, target_shape=128, display_step
                 print(
                     f"Epoch {epoch}: Step {cur_step}: Generator (U-Net) loss: {mean_generator_loss}, Discriminator loss: {mean_discriminator_loss}")
                 save_tensor_images(real_A, size=(
-                    args.dim_A, target_shape, target_shape), fname=f'real_A{epoch}_{cur_step}.jpg')
+                    args.dim_A, target_shape, target_shape), fname=f'checkpoints/{args.model}/real_A{epoch}_{cur_step}.jpg')
                 save_tensor_images(real_B, size=(
-                    args.dim_A, target_shape, target_shape), fname=f'real_B{epoch}_{cur_step}.jpg')
+                    args.dim_A, target_shape, target_shape), fname=f'checkpoints/{args.model}/real_B{epoch}_{cur_step}.jpg')
                 save_tensor_images(fake_A, size=(
-                    args.dim_A, target_shape, target_shape), fname=f'fake_A{epoch}_{cur_step}.jpg')
+                    args.dim_A, target_shape, target_shape), fname=f'checkpoints/{args.model}/fake_A{epoch}_{cur_step}.jpg')
                 save_tensor_images(fake_B, size=(
-                    args.dim_A, target_shape, target_shape), fname=f'fake_B{epoch}_{cur_step}.jpg')
+                    args.dim_A, target_shape, target_shape), fname=f'checkpoints/{args.model}/fake_B{epoch}_{cur_step}.jpg')
                 
                 # show_tensor_images(torch.cat([fake_B, fake_A]), size=(
                 #     args.dim_B, target_shape, target_shape))
@@ -140,7 +140,7 @@ def train(epochs, adv_criterion, recon_criterion, target_shape=128, display_step
                         'disc_A_opt': disc_A_opt.state_dict(),
                         'disc_B': disc_B.state_dict(),
                         'disc_B_opt': disc_B_opt.state_dict()
-                    }, f"a{cur_step}.pth")
+                    }, f"checkpoints/{args.model}/{args.model}_{epoch}_{cur_step}.pth")
             cur_step += 1
         generator_loss.append(mean_generator_loss)
         disc_loss.append(mean_discriminator_loss)
@@ -152,7 +152,7 @@ if __name__ == '__main__':
     parser.add_argument('--model', type=str,
                         default='joy2sadness', help='model you want to train')
     parser.add_argument('--dataroot', type=str,
-                        default='datasets/Emotion6/images', help='dataset directory path')
+                        default='dataset/Emotion6/images', help='dataset directory path')
     parser.add_argument('--batch_size', type=int,
                         default=1, help='batch size')
     parser.add_argument('--epochs', type=int,
@@ -185,6 +185,10 @@ if __name__ == '__main__':
     ])  
 
     print(args.dataroot)
+    
+    #create directory
+    os.makedirs(os.path.join('checkpoints', args.model), exist_ok=True)
+
     dataset = ImageDataset(
         args.dataroot, transform=transform, A=emotions[0], B=emotions[1])
 
