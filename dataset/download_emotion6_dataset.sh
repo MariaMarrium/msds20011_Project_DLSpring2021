@@ -10,5 +10,5 @@ TARGET_DIR="./dataset/Emotion6/"
 mkdir -p "./datasets"
 wget -N "$URL" -O "$ZIP_FILE"
 mkdir $TARGET_DIR
-unzip $ZIP_FILE -d ./datasets/
+unzip $ZIP_FILE -d ./dataset/
 rm "$ZIP_FILE"
